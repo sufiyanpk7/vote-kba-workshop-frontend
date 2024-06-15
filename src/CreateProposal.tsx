@@ -62,10 +62,44 @@ export default function CreateProposal() {
   }, [provider]);
 
   //Step D - Configure Proposal Form
-  const form = useForm<z.infer<typeof formSchema>>({});
+const form = useForm<z.infer<typeof formSchema>>({
+  resolver: zodResolver(formSchema),
+  defaultValues: {
+    address: currentWalletAddress,
+    title: "",
+    description: "",
+    voteThreshold: 0,
+  },
+});
 
   //Step E - Write Create Proposal Logic
-  function onSubmit(values: z.infer<typeof formSchema>) {}
+function onSubmit(values: z.infer<typeof formSchema>) {
+  const proposalInput: IProposalInput = {
+    creator: currentWalletAddress,
+    title: values.title,
+    description: values.description,
+    voteThreshold: values.voteThreshold,
+  };
+
+  setCreateProposalInput(proposalInput);
+
+  const createNewProposal = async () => {
+    try {
+      await DAOContract?.callSendMethod(
+        "CreateProposal",
+        currentWalletAddress,
+        createProposalInput
+      );
+
+      navigate("/");
+      alert("Successfully created proposal");
+    } catch (error) {
+      console.error(error, "====error");
+    }
+  };
+
+  createNewProposal();
+}
 
   return (
     <div className="form-wrapper">

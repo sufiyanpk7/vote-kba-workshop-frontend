@@ -76,14 +76,69 @@ function HomeDAO() {
 
   const connect = async () => {
     //Step B - Connect Portkey Wallet
+    const accounts = await provider?.request({
+      method: MethodsBase.REQUEST_ACCOUNTS,
+    });
+    const account = accounts?.tDVW?.[0];
+    setCurrentWalletAddress(account);
+    setIsConnected(true);
+    alert("Successfully connected");
   };
 
   const initializeAndJoinDAO = async () => {
     //Step C - Write Initialize Smart Contract and Join DAO Logic
+    try {
+      const accounts = await provider?.request({
+        method: MethodsBase.ACCOUNTS,
+      });
+      if (!accounts) throw new Error("No accounts");
+  
+      const account = accounts?.tDVW?.[0];
+      if (!account) throw new Error("No account");
+  
+      if (!initialized) {
+        await DAOContract?.callSendMethod("Initialize", account, {});
+        setInitialized(true);
+        alert("DAO Contract Successfully Initialized");
+      }
+  
+      await DAOContract?.callSendMethod("JoinDAO", account, account);
+      setJoinedDAO(true);
+      alert("Successfully Joined DAO");
+    } catch (error) {
+      console.error(error, "====error");
+    }
   };
 
   const voteYes = async (index: number) => {
     //Step F - Write Vote Yes Logic
+    try {
+      const accounts = await provider?.request({
+        method: MethodsBase.ACCOUNTS,
+      });
+  
+      if (!accounts) throw new Error("No accounts");
+  
+      const account = accounts?.tDVW?.[0];
+  
+      if (!account) throw new Error("No account");
+  
+      const createVoteInput: IVoteInput = {
+        voter: account,
+        proposalId: index,
+        vote: true,
+      };
+  
+      await DAOContract?.callSendMethod(
+        "VoteOnProposal",
+        account,
+        createVoteInput
+      );
+      alert("Voted on Proposal");
+      setHasVoted(true);
+    } catch (error) {
+      console.error(error, "=====error");
+    }
   };
 
   const voteNo = async (index: number) => {
@@ -118,6 +173,31 @@ function HomeDAO() {
 
   useEffect(() => {
     //Step G - Use Effect to Fetch Proposals
+    const fetchProposals = async () => {
+      try {
+        const accounts = await provider?.request({
+          method: MethodsBase.ACCOUNTS,
+        });
+  
+        if (!accounts) throw new Error("No accounts");
+  
+        const account = accounts?.tDVW?.[0];
+  
+        if (!account) throw new Error("No account");
+  
+        const proposalResponse = await DAOContract?.callViewMethod<IProposals>(
+          "GetAllProposals",
+          ""
+        );
+  
+        setProposals(proposalResponse?.data);
+        alert("Fetched Proposals");
+      } catch (error) {
+        console.error(error, "===error");
+      }
+    };
+  
+    fetchProposals();
   }, [DAOContract, hasVoted, isConnected, joinedDAO]);
 
   useEffect(() => {
